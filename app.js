@@ -67,9 +67,20 @@ var nicknames=[];
 var sockets=io(server);
 sockets.on("connection",function(socket){
     //el evento setnickname se ejecuta cuando el cliente a emitido sobre setnickname
+    socket.on("mensajes",function(clientedata){
+        if(clientedata.nick===socket.nickname)
+        {
+            sockets.sockets.emit("mensajes",clientedata);
+            return;    
+        }
+        sockets.sockets.emit("mensajes",false);
+        
+    });
     socket.on("setnickname",function(clientedata){
         if(verificarCuenta(clientedata.nick)){
             nicknames.push(clientedata);
+            //seteamos el nick en el mismo socket del cliente
+            socket.nickname=clientedata.nick;
             socket.emit("setnickname",{"server":true});
             return;
         }
