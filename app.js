@@ -61,30 +61,36 @@ module.exports = app;
 var PORT=3001;
 var server=app.listen(PORT,function(){
     console.log("Servidor corriendo en "+PORT);
-})
+});
 //instanciamos los sockets junto con el servidor
 var nicknames=[];
 var sockets=io(server);
-sockets.on("connection",function(socket){
-    //el evento setnickname se ejecuta cuando el cliente a emitido sobre setnickname
-    socket.on("mensajes",function(clientedata){
+sockets.on('connection', function(socket) {
+    socket.on('setnickname', function(clientedata) {
+        if(verificarCuenta(clientedata.nick))
+        {
+            nicknames.push(clientedata);
+            socket.nickname = clientedata.nick;
+            socket.emit("setnickname",{"server":true});
+            sockets.sockets.emit("getlista",{"lista":nicknames});
+            return;
+        }
+        socket.emit("setnickname",{"server":"el nick no esta disponible"});
+        return;
+    });
+    socket.on('getlista', function(clientedata) {
+        socket.emit("getlista",{"lista":nicknames});
+        return;
+    });
+    socket.on('mensajes', function(clientedata) {
+        console.log(socket.nickname);
         if(clientedata.nick===socket.nickname)
         {
             sockets.sockets.emit("mensajes",clientedata);
-            return;    
-        }
-        sockets.sockets.emit("mensajes",false);
-        
-    });
-    socket.on("setnickname",function(clientedata){
-        if(verificarCuenta(clientedata.nick)){
-            nicknames.push(clientedata);
-            //seteamos el nick en el mismo socket del cliente
-            socket.nickname=clientedata.nick;
-            socket.emit("setnickname",{"server":true});
+            console.log(clientedata.nick+"  "+clientedata.msn);
             return;
         }
-        socket.emit("setnickname",{"server":"El nick no esta disponible"});
+        sockets.sockets.emit("mensajes",false);
         return;
     });
 });
@@ -98,4 +104,4 @@ var verificarCuenta=function(ins)
         }
     }
     return true;
-}
+};
