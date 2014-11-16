@@ -5,24 +5,35 @@ $(function($) {
 	$("#nickname").keydown(function(event) {
 		if(event.keyCode==13 && $(this).val()!="")
 		{
-			//realizamos nuestra primera conneccion con el socket
-			console.log(socket);
 			socket.emit("setnickname",{"nick":$(this).val()});
+			//socket.emit("getlista",{});
 		}
 	});
-	socket.on("setnickname",function(response){
+	socket.on('setnickname', function(response) {
 		if(response.server===true)
 		{
-			//en caso de que el nick este disponible accedemos
-			//al sistema de chat para ello llamaremos al metodo 
-			//loadhtml que definiremos más abajo
 			loadhtml("/saladechat/");
-			$("#nickname").attr('disabled', 'true');
-
+			$("#nickname").attr('disabled','true');
+			//socket.emit("getlista",{});
 		}else{
-			alert(response.server)
+			alert(response.server);
 		}
-	})
+	});
+	socket.on('mensajes', function(response) {
+		console.log(response);
+		$("#mensajes").append("<li>"+response.nick+">"+response.msn+"</li>");
+	});
+	socket.on('getlista', function(response) {
+		console.log(response);
+		console.log(response.lista);
+		html="";
+		for(var i=0;i<response.lista.length;i++)
+		{
+			html=html+("<li>"+response.lista[i].nick+"</li>");
+		}
+		console.log(html);
+		$("#usuarios").html(html);
+	});
 	var loadhtml=function(url)
 	{
 		$.ajax({
@@ -32,29 +43,30 @@ $(function($) {
 			data: {},
 		})
 		.done(function(html) {
+			//alert(html);
 			$("#content").html(html);
-			//habilitamos el envio de mensajes
 			enabledchat();
+			lista();
 		})
 		.fail(function() {
-			
+			console.log("error");
 		})
 		.always(function() {
-			
 		});
-	}
+		
+	};
+	var lista=function()
+	{
+		socket.emit("getlista",{});
+	};
 	var enabledchat=function()
 	{
 		$("#menvio").keydown(function(event) {
 			if(event.keyCode==13)
 			{
-				socket.emit("mensajes",{"nick":$("#nickname").val(),"msn":$(this).val()})
+				socket.emit("mensajes",{"nick":$("#nickname").val(),"msn":$(this).val()});
 				$(this).val("");
 			}
-		});	
-	}
-	socket.on("mensajes",function(response){
-		console.log(response);
-		$("#mensajes").append("<li>"+response.nick+">"+response.msn+"</li>")
-	});
+		});
+	};
 });
